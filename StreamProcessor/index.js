@@ -21,10 +21,20 @@ module.exports = async function (context, req) {
         let obj = JSON.parse(value);
         let index = obj.index;
         if (!splitedFileStreamsMap.has(index)) {
-            const 
-            splitedFileStreamsMap.set(index, {
+            const newStream = new Readable();
+            blockBlobClient.uploadStream(newStream);
+            splitedFileStreamsMap.set(index, newStream);
+        }
+        splitedFileStreamsMap.get(index).push(value);
+    });
 
-            })
+    dataStream.on("end", () => {
+        for (stream in splitedFileStreamsMap) {
+            stream.push(null);
         }
     });
+
+    dataStream.on("error", (err) => {
+        context.log(err);
+    })
 }
