@@ -9,6 +9,11 @@ const blobServiceClient = BlobServiceClient.fromConnectionString("DefaultEndpoin
 module.exports = async function (context, req) {
     context.log('Stream generator begin');
 
+    // this Azure Function is a producer to generate dummy data for testing
+    // here is the URL for generating a 5GB dummy data file for the consumer, streamProcessor.
+    // https://liamfunctiontest0x01.azurewebsites.net/api/streamgenerator?name=blob1&total=16777216&interval=524288
+    // means calling this function with total of 16777216 random objects with 524288 logging interval, one run generates 32 log entries to mimic the progress bar
+
     context.res = { status: 200 };
 
     let name = "blob1";
