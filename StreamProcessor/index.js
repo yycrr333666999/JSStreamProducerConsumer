@@ -28,7 +28,7 @@ module.exports = async function (context, req) {
                 return;
             }
             newStream.push(obj);
-            // context.log("forking a new stream, index: " + index);
+            context.log("forking a new stream, index: " + index);
             let promise = blobServiceClient.getContainerClient("container1").getBlockBlobClient("blob1" + "-" + index).uploadStream(newStream.pipe(stringer()));
             allAwaitablePromises.push(promise);
             // we can later seperate these housekeeping parts into its own functions
