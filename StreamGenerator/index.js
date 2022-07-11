@@ -11,7 +11,7 @@ module.exports = async function (context, req) {
 
     context.res = { status: 200 };
 
-    let name = "blob3";
+    let name = "blob1";
     let total = 1;
     let interval = 1;
     if (req.query.name) name = req.query.name;

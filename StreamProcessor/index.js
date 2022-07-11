@@ -11,7 +11,7 @@ module.exports = async function (context, req) {
     // if (!req.body.blob) return context.res = { status: 404 }
     context.res = { status: 200 };
 
-    const blockBlobClient = blobServiceClient.getContainerClient("container1").getBlockBlobClient("blob3");
+    const blockBlobClient = blobServiceClient.getContainerClient("container1").getBlockBlobClient("blob1");
 
     const downloadBlobStream = await blockBlobClient.download(0);
 
@@ -20,14 +20,14 @@ module.exports = async function (context, req) {
     let splitedFileStreamsMap = new Map();
 
     objStream.on("data", (obj) => {
-        let index = obj.index;
+        let index = obj.key;
         if (!splitedFileStreamsMap.has(index)) {    // if the index is new, initiate a new stream and start the first upload
             const newStream = new Readable({ objectMode: true });
             newStream._read = function () {
                 return;
             }
             newStream.push(obj);
-            blobServiceClient.getContainerClient("container1").getBlockBlobClient("blob3" + "-" + index).uploadStream(newStream.pipe(stringer()));   // we can later seperate these housekeeping parts into its own functions
+            blobServiceClient.getContainerClient("container1").getBlockBlobClient("blob1" + "-" + index).uploadStream(newStream.pipe(stringer()));   // we can later seperate these housekeeping parts into its own functions
             splitedFileStreamsMap.set(index, newStream);
         } else {    // if index exists, keep pushing to the same stream
             splitedFileStreamsMap.get(index).push(obj);
