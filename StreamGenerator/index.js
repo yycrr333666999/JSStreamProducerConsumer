@@ -1,7 +1,9 @@
 const { BlobServiceClient } = require("@azure/storage-blob");
-const { Readable, pipeline } = require("stream");
+const { Readable } = require("stream");
+const { stringer: jsonStringer } = require('stream-json/jsonl/Stringer');
 const axios = require("axios");
 const { faker } = require("@faker-js/faker");
+
 const blobServiceClient = BlobServiceClient.fromConnectionString("DefaultEndpointsProtocol=https;AccountName=filestreamandprocessing;AccountKey=a9vE2tna4c1q9BLMTn49DaxHGfVsFPVi8FShGCOvM2VxGSMGA7kble32BrfCRZA5txSYIk5H2St0+AStzokHzQ==;EndpointSuffix=core.windows.net");
 
 module.exports = async function (context, req) {
@@ -9,7 +11,7 @@ module.exports = async function (context, req) {
 
     context.res = { status: 200 };
 
-    let name = "blob2";
+    let name = "blob3";
     let total = 1;
     let interval = 1;
     if (req.query.name) name = req.query.name;
@@ -23,7 +25,7 @@ module.exports = async function (context, req) {
     let line = 0;
     dummyDataGeneratorStream._read = function () {
         line++;
-        dummyDataGeneratorStream.push(JSON.stringify(randomObj()));
+        dummyDataGeneratorStream.push(randomObj());
         if (line % interval == 0) {
             context.log("current line" + line + "current obj" + obj.index + obj.payload);
         }
@@ -31,9 +33,9 @@ module.exports = async function (context, req) {
             dummyDataGeneratorStream.push(null);
             context.log("Stream ends");
         }
-    }
+    };
 
-    await blockBlobClient.uploadStream(dummyDataGeneratorStream);
+    await blockBlobClient.uploadStream(dummyDataGeneratorStream.pipe(jsonStringer)); // convert to JSONL (AKA NDJSON) format, basically stringified json object separated by \n
     // triggerStreamProcessor(name);
 
     return;
