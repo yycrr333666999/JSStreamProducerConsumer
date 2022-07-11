@@ -18,6 +18,7 @@ module.exports = async function (context, req) {
     const objStream = downloadBlobStream.readableStreamBody.pipe(parser());
 
     let splitedFileStreamsMap = new Map();
+    let allAwaitablePromises = [];
 
     objStream.on("data", (obj) => {
         let index = obj.value.index;
@@ -28,12 +29,12 @@ module.exports = async function (context, req) {
             }
             newStream.push(obj);
             // context.log("forking a new stream, index: " + index);
-            blobServiceClient.getContainerClient("container1").getBlockBlobClient("blob1" + "-" + index).uploadStream(newStream.pipe(stringer()));
+            let promise = blobServiceClient.getContainerClient("container1").getBlockBlobClient("blob1" + "-" + index).uploadStream(newStream.pipe(stringer()));
+            allAwaitablePromises.push(promise);
             // we can later seperate these housekeeping parts into its own functions
-            // note it is not possible to await with the current syntax, need to use event queuing and await all()
-            // beacuse we do not await here, no logging is provided for the true end of the uploading, however, this is trivial considering the performance of the system
+            // note we do not await with the current syntax,indstead, we push the promise into a holder array and use Promise.allSettled()
             splitedFileStreamsMap.set(index, newStream);
-            // context.log("forked stream initiation completed and registered, current map depth: " + splitedFileStreamsMap.size);
+            context.log("forked stream initiation completed and registered, current map depth: " + splitedFileStreamsMap.size);
         } else {    // if index exists, keep pushing to the same stream
             splitedFileStreamsMap.get(index).push(obj);
         }
@@ -49,4 +50,6 @@ module.exports = async function (context, req) {
     objStream.on("error", (err) => {
         context.log(err);
     })
+
+    await Promise.allSettled(allAwaitablePromises);
 }
