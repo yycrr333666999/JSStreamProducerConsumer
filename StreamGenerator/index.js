@@ -1,6 +1,6 @@
 const { BlobServiceClient } = require("@azure/storage-blob");
 const { Readable } = require("stream");
-const { stringer: jsonStringer } = require('stream-json/jsonl/Stringer');
+const { stringer } = require('stream-json/jsonl/Stringer');
 const axios = require("axios");
 const { faker } = require("@faker-js/faker");
 
@@ -20,7 +20,7 @@ module.exports = async function (context, req) {
 
     const blockBlobClient = blobServiceClient.getContainerClient("container1").getBlockBlobClient(name);
 
-    const dummyDataGeneratorStream = new Readable();
+    const dummyDataGeneratorStream = new Readable({ objectMode: true });
 
     let line = 0;
     dummyDataGeneratorStream._read = function () {
@@ -35,7 +35,7 @@ module.exports = async function (context, req) {
         }
     };
 
-    await blockBlobClient.uploadStream(dummyDataGeneratorStream.pipe(jsonStringer)); // convert to JSONL (AKA NDJSON) format, basically stringified json object separated by \n
+    await blockBlobClient.uploadStream(dummyDataGeneratorStream.pipe(stringer())); // convert to JSONL (AKA NDJSON) format, basically stringified json object separated by \n
     // triggerStreamProcessor(name);
 
     return;
