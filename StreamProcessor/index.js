@@ -20,7 +20,7 @@ module.exports = async function (context, req) {
     let splitedFileStreamsMap = new Map();
 
     objStream.on("data", (obj) => {
-        let index = obj.key;
+        let index = obj.value.index;
         if (!splitedFileStreamsMap.has(index)) {    // if the index is new, initiate a new stream and start the first upload
             const newStream = new Readable({ objectMode: true, highWaterMark: 16 });
             newStream._read = function () {
