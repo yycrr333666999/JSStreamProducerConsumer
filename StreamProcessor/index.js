@@ -11,45 +11,38 @@ module.exports = async function (context, req) {
     // if (!req.body.blob) return context.res = { status: 404 }
     context.res = { status: 200 };
 
-    const blockBlobClient = blobServiceClient.getContainerClient("container1").getBlockBlobClient("blob1");
+    const blockBlobClient = blobServiceClient.getContainerClient("container1").getBlockBlobClient("blob2");
 
-    const downloadBlobStream = await blockBlobClient.download(0);
+    const downloadBlobResponse = await blockBlobClient.download();
+    const objStream = downloadBlobResponse.readableStreamBody.pipe(parser());
 
-    const objStream = downloadBlobStream.readableStreamBody.pipe(parser());
+    const splitedFileStreamsMap = new Map();
+    const uploadStreamsMap = new Map();
 
-    let splitedFileStreamsMap = new Map();
-    let allAwaitablePromises = [];
 
-    objStream.on("data", (obj) => {
+    objStream.on("data", async (obj) => {
         let index = obj.value.index;
         if (!splitedFileStreamsMap.has(index)) {    // if the index is new, initiate a new stream and start the first upload
-            const newStream = new Readable({ objectMode: true, highWaterMark: 16 });
+            const newStream = new Readable({ objectMode: true });
             newStream._read = function () {
                 return;
             }
-            newStream.push(obj);
-            context.log("forking a new stream, index: " + index);
-            let promise = blobServiceClient.getContainerClient("container1").getBlockBlobClient("blob1" + "-" + index).uploadStream(newStream.pipe(stringer()));
-            allAwaitablePromises.push(promise);
-            // we can later seperate these housekeeping parts into its own functions
-            // note we do not await with the current syntax,indstead, we push the promise into a holder array and use Promise.allSettled()
             splitedFileStreamsMap.set(index, newStream);
-            context.log("forked stream initiation completed and registered, current map depth: " + splitedFileStreamsMap.size);
-        } else {    // if index exists, keep pushing to the same stream
-            splitedFileStreamsMap.get(index).push(obj);
+            uploadStreamsMap.set(index, blobServiceClient.getContainerClient("container1").getBlockBlobClient("blob1" + "-" + index).uploadStream(newStream.pipe(stringer())));
+            // we can later seperate these housekeeping parts into its own functions
+            // note it is not possible to await here,indstead, we push the promise into a holder array and use Promise.allSettled()
         }
+        splitedFileStreamsMap.get(index).push(obj); // if index exists, keep pushing to the same stream
     });
 
-    objStream.on("end", () => {
+    objStream.on("error", (err) => {
+        context.log(err);
+    });
+
+    objStream.on("end", async () => {
         context.log("processing completed, ending all streams");
         for (const stream of splitedFileStreamsMap.values()) {
             stream.push(null);
         }
     });
-
-    objStream.on("error", (err) => {
-        context.log(err);
-    })
-
-    await Promise.allSettled(allAwaitablePromises);
 }
