@@ -3,7 +3,7 @@ const { Readable } = require("stream");
 const { parser } = require('stream-json/jsonl/Parser');
 const { stringer } = require('stream-json/jsonl/Stringer');
 
-const blobServiceClient = BlobServiceClient.fromConnectionString("DefaultEndpointsProtocol=https;AccountName=filestreamandprocessing;AccountKey=a9vE2tna4c1q9BLMTn49DaxHGfVsFPVi8FShGCOvM2VxGSMGA7kble32BrfCRZA5txSYIk5H2St0+AStzokHzQ==;EndpointSuffix=core.windows.net");
+const blobServiceClient = BlobServiceClient.fromConnectionString("DefaultEndpointsProtocol=https;AccountName=liamteststorage0x01;AccountKey=g2dQ2iCUpoL9S5JfwRlvoj/MFCmrlhUbT6TYHiF5qRdei7N2ZFrlNMEvOgttybXLMn5k/RTeY/Ye+ASt+YVW+g==;EndpointSuffix=core.windows.net");
 
 module.exports = async function (context, req) {
     context.log('JS HTTP trigger begin');
@@ -19,8 +19,8 @@ module.exports = async function (context, req) {
     const splitedFileStreamsMap = new Map();
     const uploadStreamsMap = new Map();
 
-
-    objStream.on("data", async (obj) => {
+    objStream.on("data", (obj) => {
+        objStream.pause();
         let index = obj.value.index;
         if (!splitedFileStreamsMap.has(index)) {    // if the index is new, initiate a new stream and start the first upload
             const newStream = new Readable({ objectMode: true });
@@ -33,6 +33,7 @@ module.exports = async function (context, req) {
             // note it is not possible to await here,indstead, we push the promise into a holder array and use Promise.allSettled()
         }
         splitedFileStreamsMap.get(index).push(obj); // if index exists, keep pushing to the same stream
+        objStream.resume()
     });
 
     objStream.on("error", (err) => {
