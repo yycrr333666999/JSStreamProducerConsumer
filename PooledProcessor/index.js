@@ -7,8 +7,8 @@ const { stringer } = require('stream-json/jsonl/Stringer');
 
 const blobServiceClient = BlobServiceClient.fromConnectionString("DefaultEndpointsProtocol=https;AccountName=liamteststorage0x01;AccountKey=g2dQ2iCUpoL9S5JfwRlvoj/MFCmrlhUbT6TYHiF5qRdei7N2ZFrlNMEvOgttybXLMn5k/RTeY/Ye+ASt+YVW+g==;EndpointSuffix=core.windows.net");
 
-module.exports = async function (context, myQueueMessage) {
-    index = parseInt(myQueueMessage);
+module.exports = async function (context, myQueueItem) {
+    index = parseInt(myQueueItem);
 
     context.log('queued processor pool processed work item number: ', index);
 
