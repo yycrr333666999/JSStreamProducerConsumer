@@ -1,6 +1,6 @@
 const { Transform } = require('stream');
 
-moodule.exports = class IndexFilter extends Transform {
+module.exports = class IndexFilter extends Transform {
 
     constructor(index) {
         super({
