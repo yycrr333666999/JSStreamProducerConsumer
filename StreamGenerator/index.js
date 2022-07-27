@@ -52,7 +52,7 @@ function random(min, max) {
 
 function randomObj() {
     return obj = {
-        "index": random(0, 10).toString(),
+        "index": random(0, 100).toString(),
         "payload": {
             "userId": faker.datatype.uuid(),
             "username": faker.internet.userName(),

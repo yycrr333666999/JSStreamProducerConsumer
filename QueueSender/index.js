@@ -11,23 +11,22 @@ module.exports = async function (context) {
     // if (!req.body.blob) return context.res = { status: 404 }
     context.res = { status: 200 };
 
-    const blockBlobClient = blobServiceClient.getContainerClient("container1").getBlockBlobClient("blob2");
+    const blockBlobClient = blobServiceClient.getContainerClient("container1").getBlockBlobClient("blob1");
     let queueName = "queue1"
     const queueClient = queueServiceClient.getQueueClient(queueName);
+    // const queueClient = new QueueClient();
+
 
     const downloadBlobResponse = await blockBlobClient.download();
     const objStream = downloadBlobResponse.readableStreamBody.pipe(parser());
 
     const splitedFileIndexesArray = new Array();
 
-    objStream.on("data", async (obj) => {
+    objStream.on("data", (obj) => {
         let index = obj.value.index;
-        if (!splitedFileIndexesArray.has(index)) {    // if the index is new, initiate a new stream and start the first upload
-            context.log("dispatching message to processor pool/queue, index: " + index);
-            await queueClient.sendMessage(index);
+        if (!splitedFileIndexesArray.includes(index)) {    // if the index is new, initiate a new stream and start the first upload
             splitedFileIndexesArray.push(index);
-            // we can later seperate these housekeeping parts into its own functions
-            // note it is not possible to await here,indstead, we push the promise into a holder array and use Promise.allSettled()
+            queueClient.sendMessage(Buffer.from(index, "utf-8").toString("base64"));
         }
     });
 }
